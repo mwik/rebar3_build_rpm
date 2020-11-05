@@ -26,6 +26,7 @@ init(State) ->
 
 -spec do(rebar_state:t()) -> {ok, rebar_state:t()} | {error, string()}.
 do(State) ->
+  rebar_log:log (debug, "rpmbuild state ~p~n",[State]),
 
   {ok, {Name, Vsn}} = find_name_and_vsn_from_relx (State),
 
@@ -176,6 +177,7 @@ find_package_config_from_relx (Name, State) ->
       % this is just where we expect the config file to be located,
       % it may or may not be there or break randomly, but hopefully not
       ConfigFilePath = filename:join ([Base, "rel", Name, ConfigFile]),
+      rebar_log:log(debug, "filepath ~s",[ConfigFilePath]),
       case file:consult(ConfigFilePath) of
         {ok, Config} ->
           {ok, Config};
