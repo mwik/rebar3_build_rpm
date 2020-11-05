@@ -168,7 +168,13 @@ find_tar_file (State, {Name, Vsn}) ->
   TarDir = filename:join(Base, "rel"),
   % tar seems to be under 'rel' then under the release name, then
   % with the filename <release>-<version>.tar.gz
-  TarFile = filename:join([TarDir, Name, Name++"-"++Vsn++".tar.gz"]),
+  Vsn1 = case Vsn of
+      git ->
+          {plain, Vsn0} = rebar_git_resource:make_vsn_(Base),
+          Vsn0;
+      V -> V
+  end,
+  TarFile = filename:join([TarDir, Name, Name++"-"++Vsn1++".tar.gz"]),
   case file:read_file_info (TarFile) of
     {ok, _} -> {ok, TarFile};
     _ -> {error, {?MODULE, no_tar_file}}
