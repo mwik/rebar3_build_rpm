@@ -26,7 +26,7 @@ init(State) ->
 
 -spec do(rebar_state:t()) -> {ok, rebar_state:t()} | {error, string()}.
 do(State) ->
-  rebar_log:log (debug, "rpmbuild state ~p~n",[State]),
+    try
 
   {ok, {Name, Vsn}} = find_name_and_vsn_from_relx (State),
 
@@ -142,7 +142,12 @@ do(State) ->
   file:rename (RpmSourcePath, RpmDestPath),
   rebar_file_utils:rm_rf (BuildPath),
   rebar_log:log (info, "rpm ~s successfully created!~n",[RpmDestPath]),
-  {ok, State}.
+  {ok, State}
+    catch
+        _:_:Stacktrace ->
+            erlang:display(Stacktrace),
+            false
+    end.
 
 -spec format_error(any()) -> iolist().
 format_error(Reason) ->
