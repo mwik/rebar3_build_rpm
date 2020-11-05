@@ -175,6 +175,7 @@ find_tar_file (State, {Name, Vsn}) ->
              V -> V
          end,
   TarFile = filename:join([TarDir, Name, Name++"-"++Vsn1++".tar.gz"]),
+  rebar_log:log (debug, "Tarfile: ~s~n",[TarFile]),
   case file:read_file_info (TarFile) of
     {ok, _} -> {ok, TarFile};
     _ -> {error, {?MODULE, no_tar_file}}
