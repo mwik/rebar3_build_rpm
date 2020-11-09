@@ -816,7 +816,7 @@ rpm_header(FPM, Addons, Files) ->
     {fileusername, [determine_user(FPM, F) || F <- Files]},
     {filegroupname, [determine_group(FPM, F) || F <- Files]},
     {filelinktos, [<<>> || _ <- Files]},
-    {filerdevs, [0 || _ <- Files]},
+    {filerdevs, {int16, [0 || _ <- Files]}},
 
     {rpmversion, <<"4.8.0">>},
     {fileinodes, [inode(F) || F <- Files]},
