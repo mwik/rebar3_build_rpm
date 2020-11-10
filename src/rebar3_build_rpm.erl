@@ -171,8 +171,7 @@ find_tar_file (State, {Name, Vsn}) ->
   % with the filename <release>-<version>.tar.gz
   Vsn1 = case Vsn of
              git ->
-                 {plain, Vsn0} = rebar_git_resource:make_vsn_(rebar_dir:root_dir(State)),
-                 Vsn0;
+                 git_tag_vsn(), %(rebar_dir:root_dir(State)),
              V -> V
          end,
   TarFile = filename:join([TarDir, Name, Name++"-"++Vsn1++".tar.gz"]),
@@ -301,3 +300,72 @@ construct_pkg_hooks (PkgConfig, ReleasePath) ->
       {post_uninstall, "--post-uninstall"}
     ]
   ).
+
+git_tag_vsn() ->
+    {Vsn, RawRef, RawCount} = collect_default_refcount(),
+    build_vsn_string(Vsn, RawRef, RawCount).
+
+collect_default_refcount() ->
+    %% Get the tag timestamp and minimal ref from the system. The
+    %% timestamp is really important from an ordering perspective.
+    RawRef = sh("git log -n 1 --pretty=format:'%h\n' "),
+
+    {Tag, Vsn} = parse_tags(),
+    RawCount = get_patch_count(Tag),
+    {Vsn, RawRef, RawCount}.
+
+get_patch_count(RawRef) ->
+    Ref = re:replace(RawRef, "\\s", "", [global]),
+    Cmd = io_lib:format("git rev-list --count ~s..HEAD", [Ref]),
+    rlx_util:sh(Cmd).
+
+build_vsn_string(Vsn, RawRef, RawCount) ->
+    %% Cleanup the tag and the Ref information. Basically leading 'v's and
+    %% whitespace needs to go away.
+    RefTag = [".ref", re:replace(RawRef, "\\s", "", [global])],
+    Count = re:replace(RawCount, "\\D", "", [global]),
+
+    %% Create the valid [semver](http://semver.org) version from the tag
+    case iolist_to_binary(Count) of
+        <<"0">> ->
+            lists:flatten(Vsn);
+        CountBin ->
+            binary_to_list(iolist_to_binary([Vsn, "+build.", CountBin, RefTag]))
+    end.
+
+parse_tags() ->
+    Tag = sh("git describe --abbrev=0 --tags"),
+    Vsn = string:trim(string:trim(Tag, leading, "v"), trailing, "\n"),
+    {Tag, Vsn}.
+
+sh(Command0) ->
+    Command = lists:flatten(Command0),
+    PortSettings = [exit_status, {line, 16384}, use_stdio, stderr_to_stdout, hide, eof, binary],
+
+    Port = open_port({spawn, Command}, PortSettings),
+    try
+        case sh_loop(Port, []) of
+            {ok, Output} ->
+                Output;
+            {error, {_Rc, _Output}=Err} ->
+                error(Err)
+        end
+    after
+        port_close(Port)
+    end.
+
+sh_loop(Port, Acc) ->
+    receive
+        {Port, {data, {eol, Line}}} ->
+            sh_loop(Port, [unicode:characters_to_list(Line) ++ "\n" | Acc]);
+        {Port, {data, {noeol, Line}}} ->
+            sh_loop(Port, [unicode:characters_to_list(Line) | Acc]);
+        {Port, eof} ->
+            Data = lists:flatten(lists:reverse(Acc)),
+            receive
+                {Port, {exit_status, 0}} ->
+                    {ok, Data};
+                {Port, {exit_status, Rc}} ->
+                    {error, {Rc, Data}}
+            end
+    end.
