@@ -29,6 +29,8 @@ do(State) ->
     try
 
   {Opts, _} = rebar_state:command_parsed_args(State),
+  rebar_log:log (info, "rpmbuild Opts ~p~n",[Opts]),
+  
   RelName = proplists:get_value(relname, Opts, undefined),
   rebar_log:log (info, "rpmbuild RelName ~p~n",[RelName]),
         
