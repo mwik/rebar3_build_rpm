@@ -171,7 +171,7 @@ find_tar_file (State, {Name, Vsn}) ->
   % with the filename <release>-<version>.tar.gz
   Vsn1 = case Vsn of
              git ->
-                 git_tag_vsn(), %(rebar_dir:root_dir(State)),
+                 git_tag_vsn(); %(rebar_dir:root_dir(State)),
              V -> V
          end,
   TarFile = filename:join([TarDir, Name, Name++"-"++Vsn1++".tar.gz"]),
