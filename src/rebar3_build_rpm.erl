@@ -27,7 +27,10 @@ init(State) ->
 -spec do(rebar_state:t()) -> {ok, rebar_state:t()} | {error, string()}.
 do(State) ->
     try
-%  rebar_log:log (info, "rpmbuild state ~p~n",[State]),
+
+  {Opts, _} = rebar_state:command_parsed_args(State),
+  RelName = proplists:get_value(relname, Opts, undefined),
+  rebar_log:log (info, "rpmbuild RelName ~p~n",[RelName]),
         
   {ok, {Name, Vsn}} = find_name_and_vsn_from_relx (State),
 
