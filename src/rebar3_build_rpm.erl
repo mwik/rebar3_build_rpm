@@ -176,7 +176,7 @@ find_tar_file (State, {Name, Vsn}) ->
   % with the filename <release>-<version>.tar.gz
   Vsn1 = case Vsn of
              git ->
-                 V0 = git_vsn(Name, State),
+                 V0 = git_tag_vsn(),
                  rebar_log:log(info, "Found git version ~s", [V0]),
                  V0; %(rebar_dir:root_dir(State)),
              V -> V
@@ -307,12 +307,6 @@ construct_pkg_hooks (PkgConfig, ReleasePath) ->
       {post_uninstall, "--post-uninstall"}
     ]
   ).
-
-git_vsn(Name, State) ->
-    RelxConfig = rebar_state:get(State, relx, []),
-    {ok, RelxState} = rlx_config:to_state(RelxConfig1),
-    io:format("build_rpm RelxState ~p~n", [RelxState]),
-    State#configured_releases
 
 git_tag_vsn() ->
     {Vsn, RawRef, RawCount} = collect_default_refcount(),
