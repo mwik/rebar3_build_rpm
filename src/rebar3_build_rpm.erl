@@ -25,9 +25,31 @@ init(State) ->
   {ok, State1}.
 
 -spec do(rebar_state:t()) -> {ok, rebar_state:t()} | {error, string()}.
+-ifdef(OTP_RELEASE).
+-if(?OTP_RELEASE >= 21).
 do(State) ->
     try
+        try_do(State)
+    catch
+        _:_:Stacktrace ->
+            erlang:display(Stacktrace),
+            false
+    end.
 
+-endif.
+-else.
+%% OTP 20 or lower.
+do(State) ->
+    try
+        try_do(State)
+    catch
+        _:_ ->
+            erlang:display(erlang:get_stacktrace()),
+            false
+    end.
+-endif.
+
+try_do(State) ->
   {Opts, _} = rebar_state:command_parsed_args(State),
   rebar_log:log (info, "rpmbuild Opts ~p~n",[Opts]),
   
@@ -148,12 +170,7 @@ do(State) ->
   file:rename (RpmSourcePath, RpmDestPath),
   rebar_file_utils:rm_rf (BuildPath),
   rebar_log:log (info, "rpm ~s successfully created!~n",[RpmDestPath]),
-  {ok, State}
-    catch
-        _:_:Stacktrace ->
-            erlang:display(Stacktrace),
-            false
-    end.
+  {ok, State}.
 
 -spec format_error(any()) -> iolist().
 format_error(Reason) ->
