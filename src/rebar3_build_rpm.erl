@@ -60,7 +60,7 @@ try_do(State) ->
 
   {ok, TarFile} = find_tar_file (State, {Name, Vsn}),
 
-  {ok, PkgConfig} = find_package_config_from_relx (Name, State),
+  {ok, PkgConfig} = find_package_config (Name, State),
 
   RootPath = filename:join ([rebar_dir:base_dir(State), "rpm"]),
   % build will represent / on the target system filesystem, in other
@@ -205,9 +205,9 @@ find_tar_file (State, {Name, Vsn}) ->
     _ -> {error, {?MODULE, no_tar_file}}
   end.
 
-find_package_config_from_relx (Name, State) ->
-  Relx = rebar_state:get(State, relx, []),
-  case lists:keyfind (pkg_config, 1, Relx) of
+find_package_config (Name, State) ->
+  BuildRpm = rebar_state:get(State, build_rpm, []),
+  case lists:keyfind (pkg_config, 1, BuildRpm) of
     {pkg_config, ConfigFile} ->
       Base = rebar_dir:base_dir(State),
       % this is just where we expect the config file to be located,
