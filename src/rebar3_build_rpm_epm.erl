@@ -68,8 +68,8 @@
   gpg,
   paths = [],
   exclude_dirs = [],
-  user_overrides = dict:new(),
-  group_overrides = dict:new()
+  user_overrides = p_tree:new(),
+  group_overrides = p_tree:new()
 }).
 -define (DEFAULT_EXCLUDE_DIRS, [ <<"etc">>, <<"etc/init.d">>, <<"opt">> ]).
 
@@ -197,8 +197,8 @@ parse_args(["--user-group-override", Override|Args],
     {match, [User, Group, Path]} ->
       parse_args(Args,
                  State#fpm{
-                   user_overrides = dict:store (Path, User, UserOverrides),
-                   group_overrides = dict:store (Path, Group, GroupOverrides)
+                   user_overrides = p_tree:add (binary_to_list(Path), User, UserOverrides),
+                   group_overrides = p_tree:add (binary_to_list(Path), Group, GroupOverrides)
                  });
     nomatch ->
       fpm_error("--user-group-override '~s' does not match User:Group/Path", [Override])
@@ -775,16 +775,20 @@ cpio_pack(Name, Type, Size, Inode, Mode) ->
 
 
 determine_user(FPM, Path) ->
-  case dict:find(Path, FPM#fpm.user_overrides) of
-    {ok, User} -> User;
-    error -> <<"root">>
-  end.
+    p_tree:find(binary_to_list(Path), FPM#fpm.user_overrides, <<"root">>).
+
+  %% case dict:find(Path, FPM#fpm.user_overrides) of
+  %%   {ok, User} -> User;
+  %%   error -> <<"root">>
+  %% end.
 
 determine_group(FPM, Path) ->
-  case dict:find(Path, FPM#fpm.group_overrides) of
-    {ok, User} -> User;
-    error -> <<"root">>
-  end.
+    p_tree:find(binary_to_list(Path), FPM#fpm.group_overrides, <<"root">>).
+
+  %% case dict:find(Path, FPM#fpm.group_overrides) of
+  %%   {ok, User} -> User;
+  %%   error -> <<"root">>
+  %% end.
 
 
 rpm_header(FPM, Addons, Files) ->
